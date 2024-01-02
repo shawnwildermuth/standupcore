@@ -117,7 +117,7 @@ internal static class Program
   static void UpdateIconText()
   {
     var timeLeft = TimeSpan.FromMinutes(_settings!.CurrentInterval) - TimeSpan.FromSeconds(_counter);
-    _notifyIcon.Text = $"{timeLeft.Minutes}:{timeLeft.Seconds} left";
+    _notifyIcon.Text = $"{timeLeft.ToString("g")} left";
   }
 
   /*************** Events *******************/
@@ -132,6 +132,7 @@ internal static class Program
       CheckRightInterval();
       _counter = 0;
       RestartTimer();
+      UpdateIconText();
     }
   }
 
