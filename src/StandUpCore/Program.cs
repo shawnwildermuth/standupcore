@@ -8,13 +8,13 @@ namespace StandUpCore;
 
 internal static class Program
 {
-  static NotifyIcon notifyIcon = new NotifyIcon();
-  static ContextMenuStrip cms = new ContextMenuStrip();
-  static System.Threading.Timer? timer = null;
-  static ApplicationContext? context;
-  static int counter = 0;
-  static Settings? settings;
-  static JsonSerializerOptions serializerOptions = new()
+  static NotifyIcon _notifyIcon = new NotifyIcon();
+  static ContextMenuStrip _cms = new ContextMenuStrip();
+  static System.Threading.Timer? _timer = null;
+  static ApplicationContext? _context;
+  static int _counter = 0;
+  static Settings? _settings;
+  static JsonSerializerOptions _serializerOptions = new()
   {
     WriteIndented = true,
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -26,17 +26,19 @@ internal static class Program
   [STAThread]
   static async Task Main()
   {
+
+    await ReadSettings();
+
     // Used for debugging only
 #if DEBUG
+    ShowNotification();
     AllocConsole();
 #endif
 
     ApplicationConfiguration.Initialize();
 
-    await ReadSettings();
-
-    notifyIcon.Icon = new Icon("Assets/favicon.ico");
-    notifyIcon.Text = "Notify";
+    _notifyIcon.Icon = new Icon("Assets/favicon.ico");
+    _notifyIcon.Text = "Notify";
 
     foreach (var value in new[] { 60, 45, 30, 25, 20, 15, 10, 5 })
     {
@@ -46,18 +48,18 @@ internal static class Program
         Tag = value
       };
       item.Click += OnIntervalChangedClicked;
-      cms.Items.Add(item);
+      _cms.Items.Add(item);
     }
-    cms.Items.Add(new ToolStripSeparator());
-    cms.Items.Add(new ToolStripMenuItem("Restart Timer", null, new EventHandler(OnRestartTimer)));
-    cms.Items.Add(new ToolStripSeparator());
-    cms.Items.Add(new ToolStripMenuItem("Quit", null, new EventHandler(OnQuit), "Quit"));
+    _cms.Items.Add(new ToolStripSeparator());
+    _cms.Items.Add(new ToolStripMenuItem("Restart Timer", null, new EventHandler(OnRestartTimer)));
+    _cms.Items.Add(new ToolStripSeparator());
+    _cms.Items.Add(new ToolStripMenuItem("Quit", null, new EventHandler(OnQuit), "Quit"));
 
-    notifyIcon.ContextMenuStrip = cms;
-    notifyIcon.Visible = true;
+    _notifyIcon.ContextMenuStrip = _cms;
+    _notifyIcon.Visible = true;
 
-    timer = new System.Threading.Timer(OnTimerTick, null, TimeInMilliseconds(settings!.TimerGranularity),
-      TimeInMilliseconds(settings!.TimerGranularity));
+    _timer = new System.Threading.Timer(OnTimerTick, null, TimeInMilliseconds(_settings!.TimerGranularity),
+      TimeInMilliseconds(_settings!.TimerGranularity));
 
     UpdateIconText();
     CheckRightInterval();
@@ -66,18 +68,18 @@ internal static class Program
 
     // Create an ApplicationContext and run a message loop
     // on the context.
-    context = new ApplicationContext();
-    Application.Run(context);
+    _context = new ApplicationContext();
+    Application.Run(_context);
 
     // Hide notify icon on quit
-    notifyIcon.Visible = false;
+    _notifyIcon.Visible = false;
   }
 
   static async Task ReadSettings()
   {
     var json = await File.ReadAllTextAsync("settings.json");
-    settings = JsonSerializer.Deserialize<Settings>(json, serializerOptions);
-    if (settings?.CurrentInterval == 0 || settings?.CurrentInterval == 0)
+    _settings = JsonSerializer.Deserialize<Settings>(json, _serializerOptions);
+    if (_settings?.CurrentInterval == 0 || _settings?.CurrentInterval == 0)
     {
       throw new InvalidOperationException("Could not read the settings.json file");
     }
@@ -85,7 +87,7 @@ internal static class Program
 
   static void SaveSettings()
   {
-    var json = JsonSerializer.Serialize(settings, serializerOptions);
+    var json = JsonSerializer.Serialize(_settings, _serializerOptions);
     File.WriteAllText("settings.json", json);
   }
 
@@ -95,47 +97,47 @@ internal static class Program
 
   static void CheckRightInterval()
   {
-    foreach (var menu in cms.Items)
+    foreach (var menu in _cms.Items)
     {
       if (menu is ToolStripMenuItem menuItem)
       {
         menuItem.Checked = (menuItem.Tag is int value &&
-          value == settings!.CurrentInterval);
+          value == _settings!.CurrentInterval);
       }
     }
   }
 
   static void RestartTimer()
   {
-    timer?.Change(settings!.TimerInMilliseconds(),
-      settings!.TimerInMilliseconds());
+    _timer?.Change(_settings!.TimerInMilliseconds(),
+      _settings!.TimerInMilliseconds());
 
   }
-
-  /*************** Events *******************/
 
   static void UpdateIconText()
   {
-    var timeLeft = TimeSpan.FromMinutes(settings!.CurrentInterval) - TimeSpan.FromSeconds(counter);
-    notifyIcon.Text = $"{timeLeft.Minutes}:{timeLeft.Seconds} left";
+    var timeLeft = TimeSpan.FromMinutes(_settings!.CurrentInterval) - TimeSpan.FromSeconds(_counter);
+    _notifyIcon.Text = $"{timeLeft.Minutes}:{timeLeft.Seconds} left";
   }
+
+  /*************** Events *******************/
 
   static void OnIntervalChangedClicked(object? sender, EventArgs e)
   {
     if (sender is ToolStripMenuItem item)
     {
       var interval = (int)item.Tag!;
-      settings!.CurrentInterval = interval;
+      _settings!.CurrentInterval = interval;
       SaveSettings();
       CheckRightInterval();
-      counter = 0;
+      _counter = 0;
       RestartTimer();
     }
   }
 
   static void OnRestartTimer(object? sender, EventArgs e)
   {
-    counter = 0;
+    _counter = 0;
     RestartTimer();
   }
 
@@ -144,25 +146,31 @@ internal static class Program
     WriteLine("Timer firing");
 
     // Increment
-    counter += settings!.TimerGranularity;  // how many seconds that we get a tick
+    _counter += _settings!.TimerGranularity;  // how many seconds that we get a tick
 
     UpdateIconText();
 
-    if (counter >= settings!.CurrentInterval * 60) // Minutes
+    if (_counter >= _settings!.CurrentInterval * 60) // Minutes
     {
-      WriteLine("Notification Shown");
-      new ToastContentBuilder()
-            .AddText("It's Time!")
-            .AddText("Time to get up and stretch!")
-            .Show();
+      _counter = 0;
+      ShowNotification();
     }
+  }
+
+  static void ShowNotification()
+  {
+    WriteLine("Notification Shown");
+    new ToastContentBuilder()
+          .AddHeader("standup", "It's Time!", "")
+          .AddText($"{_settings!.Name}, it's time to move!")
+          .Show(opt => opt.ExpirationTime = DateTime.Now.AddMinutes(_settings.CurrentInterval));
   }
 
   static void OnQuit(object? sender, System.EventArgs e)
   {
     // End application though ApplicationContext
-    timer?.Dispose();
-    context!.ExitThread();
+    _timer?.Dispose();
+    _context!.ExitThread();
   }
 
   [DllImport("kernel32.dll", SetLastError = true)]
