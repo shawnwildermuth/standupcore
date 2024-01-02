@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StandUpWithoutAds", "StandUpWithoutAds.csproj", "{AC08F557-8F8E-4A32-B162-5A6ED81AD924}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AC08F557-8F8E-4A32-B162-5A6ED81AD924}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC08F557-8F8E-4A32-B162-5A6ED81AD924}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC08F557-8F8E-4A32-B162-5A6ED81AD924}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{AC08F557-8F8E-4A32-B162-5A6ED81AD924}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC08F557-8F8E-4A32-B162-5A6ED81AD924}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC08F557-8F8E-4A32-B162-5A6ED81AD924}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9D2D07A2-FD1A-49AE-B32E-2C816A0BEF18}
+	EndGlobalSection
+EndGlobal
