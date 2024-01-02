@@ -1,14 +1,21 @@
 using System;
 using System.Windows.Forms;
+using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace StandUpCore;
 
 internal static class Program
 {
-  private static NotifyIcon? notifyIcon;
-  private static ContextMenuStrip? cms;
+  private static NotifyIcon notifyIcon = new NotifyIcon();
+  private static ContextMenuStrip cms = new ContextMenuStrip();
+  private static System.Threading.Timer? timer = null;
   private static ApplicationContext? context;
-  const int TimeOutInMinutes = 25;
+  const int TIMEOUTINMINUTES = 25;
+#if DEBUG
+  static readonly int TimeOutInMilliseconds = 5000;
+#else
+  static readonly int TimeOutInMilliseconds = (int) TimeSpan.FromMinutes(TIMEOUTINMINUTES).TotalMilliseconds;
+#endif
 
   /// <summary>
   ///  The main entry point for the application.
@@ -20,22 +27,17 @@ internal static class Program
     // see https://aka.ms/applicationconfiguration.
     ApplicationConfiguration.Initialize();
 
-    notifyIcon = new NotifyIcon();
     notifyIcon.Icon = new Icon("Assets/favicon.ico");
     notifyIcon.Text = "Notify";
 
-    cms = new ContextMenuStrip();
-
-    cms.Items.Add(new ToolStripMenuItem("Reconnect", null, new EventHandler(Reconnect_Click)));
+    cms.Items.Add(new ToolStripMenuItem("Restart Timer", null, new EventHandler(OnRestartTimer)));
     cms.Items.Add(new ToolStripSeparator());
-    cms.Items.Add(new ToolStripMenuItem("Quit", null, new EventHandler(Quit_Click), "Quit"));
+    cms.Items.Add(new ToolStripMenuItem("Quit", null, new EventHandler(OnQuit), "Quit"));
 
     notifyIcon.ContextMenuStrip = cms;
     notifyIcon.Visible = true;
-
-    int timerLength = (int)TimeSpan.FromMinutes(TimeOutInMinutes).TotalMilliseconds;
-
-    var timer = new System.Threading.Timer(OnTimeOut, null, timerLength, timerLength);
+    
+    timer = new System.Threading.Timer(OnTimeOut, null, TimeOutInMilliseconds, TimeOutInMilliseconds);
 
     // Create an ApplicationContext and run a message loop
     // on the context.
@@ -47,19 +49,23 @@ internal static class Program
 
   }
 
-  private static void OnTimeOut(object? state)
+  static void OnRestartTimer(object? sender, EventArgs e)
   {
-    MessageBox.Show("Time to stand up!");
+    timer?.Change(TimeOutInMilliseconds, TimeOutInMilliseconds);
   }
 
-  static void Reconnect_Click(object? sender, System.EventArgs e)
+  static void OnTimeOut(object? state)
   {
-    MessageBox.Show("Hello World!");
+    new ToastContentBuilder()
+      .AddText("It's Time!")
+      .AddText("Time to get up and stretch!")
+      .Show();
   }
 
-  static void Quit_Click(object? sender, System.EventArgs e)
+  static void OnQuit(object? sender, System.EventArgs e)
   {
     // End application though ApplicationContext
+    timer?.Dispose();
     context!.ExitThread();
   }
 }
